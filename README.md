@@ -1,79 +1,79 @@
 # SCUNet Image Denoise Pipeline
 
-Lokale AI-Denoise- und Restoration-Pipeline für Bilder mit **SCUNet**
-und **ONNX Runtime**.
+Local AI denoising and restoration pipeline for images using **SCUNet**
+and **ONNX Runtime**.
 
-Die Pipeline ist für Bilder gedacht, die verrauscht, leicht komprimiert
-oder an feinen Kanten unsauber sind. Sie arbeitet **bei gleicher
-Auflösung** und führt kein eigentliches Upscaling durch.
+The pipeline is intended for images that are noisy, lightly compressed,
+or rough around fine edges. It works **at the same resolution** and
+does not perform any actual upscaling.
 
-## Modell
+## Model
 
-Verwendetes Modell:
+Model in use:
 
 ``` text
 scunet_color_real_psnr.onnx
 ```
 
-Falls das Modell externe Gewichte verwendet, müssen beide Dateien im
-selben Verzeichnis liegen:
+If the model uses external weights, both files must be in the same
+directory:
 
 ``` text
 scunet_color_real_psnr.onnx
 scunet_color_real_psnr.onnx.data
 ```
 
-SCUNet steht für **Swin-Conv-UNet** und ist ein
-Restoration-/Denoising-Modell für reale Farbbilder.
+SCUNet stands for **Swin-Conv-UNet** and is a
+restoration/denoising model for real-world color images.
 
-Die `real_psnr`-Variante ist relativ konservativ und eignet sich daher
-gut für:
+The `real_psnr` variant is relatively conservative and therefore a good
+fit for:
 
--   Karten
--   Scans
--   historische Grafiken
--   Fotografien
--   JPEG-Artefakte
--   leichtes Bildrauschen
--   ausgefranste oder unruhige Kanten
+-   maps
+-   scans
+-   historical graphics
+-   photographs
+-   JPEG artifacts
+-   light image noise
+-   frayed or uneven edges
 
-## Voraussetzungen
+## Requirements
 
 -   Python 3
 -   Pillow
 -   NumPy
 -   ONNX Runtime
 
-Optional empfiehlt sich eine virtuelle Python-Umgebung.
+Using a virtual Python environment is recommended.
 
 ## Installation
 
-Projektordner anlegen:
+Create a project folder:
 
 ``` bash
 mkdir ai-scunet
 cd ai-scunet
 ```
 
-Virtuelle Umgebung erstellen:
+Create a virtual environment:
 
 ``` bash
 python3 -m venv venv
 ```
 
-Aktivieren:
+Activate it:
 
 ``` bash
 source venv/bin/activate
 ```
 
-Abhängigkeiten installieren:
+Install dependencies:
 
 ``` bash
 pip install onnxruntime pillow numpy
 ```
 
-## Ordnerstruktur
+## Folder Structure
 
 ``` text
 ai-scunet/
@@ -84,10 +84,10 @@ ai-scunet/
 └── output.jpg
 ```
 
-Die `.onnx.data`-Datei ist nur erforderlich, wenn das heruntergeladene
-ONNX-Modell seine Gewichte extern speichert.
+The `.onnx.data` file is only required if the downloaded ONNX model
+stores its weights externally.
 
-## Verarbeitung
+## Processing
 
 ``` text
 JPEG / PNG
@@ -99,65 +99,64 @@ Denoise + Restoration
 JPEG / PNG
 ```
 
-Die Bildauflösung bleibt erhalten.
+The image resolution is preserved.
 
 ## Tiled Processing
 
-Große Bilder sollten nicht in einem einzigen SCUNet-Durchlauf
-verarbeitet werden. Das Script verarbeitet das Bild deshalb in Tiles.
+Large images should not be processed in a single SCUNet pass. The
+script therefore processes the image in tiles.
 
-Standard:
+Default:
 
 ``` python
 TILE_SIZE = 512
 OVERLAP = 32
 ```
 
-Das bedeutet:
+This means:
 
--   jedes Teilbild ist maximal `512 × 512 px`
--   benachbarte Tiles überlappen sich um `32 px`
--   die Überlappungsbereiche werden weich miteinander verrechnet
--   sichtbare Tile-Grenzen werden dadurch vermieden
+-   each tile is at most `512 × 512 px`
+-   adjacent tiles overlap by `32 px`
+-   overlapping areas are blended smoothly
+-   visible tile boundaries are avoided
 
-Die Rand-Tiles werden so positioniert, dass sie ebenfalls die volle
-Tile-Größe besitzen und lediglich stärker mit dem vorherigen Tile
-überlappen.
+The edge tiles are positioned so they also keep the full tile size and
+only overlap more strongly with the previous tile.
 
 ## Padding
 
-SCUNet verwendet mehrere Downsampling- und Transformer-Stufen. Die
-Eingabedimensionen müssen deshalb für bestimmte interne Operationen
-sauber teilbar sein.
+SCUNet uses several downsampling and transformer stages. The input
+dimensions therefore need to be cleanly divisible for certain internal
+operations.
 
-Das Script padded Tiles bei Bedarf auf ein Vielfaches von `64`:
+The script pads tiles to a multiple of `64` when needed:
 
 ``` python
 pad_h = (64 - h % 64) % 64
 pad_w = (64 - w % 64) % 64
 ```
 
-Als Padding-Modus wird `reflect` verwendet. Nach der Inferenz wird das
-Padding wieder entfernt.
+`reflect` is used as the padding mode. After inference, the padding is
+removed again.
 
-## Script ausführen
+## Running the Script
 
-Bei fest definiertem Input im Script:
+With a fixed input defined in the script:
 
 ``` bash
 python3 scunet.py
 ```
 
-Beispiel:
+Example:
 
 ``` python
 INPUT = "roman-expansion.jpg"
 OUTPUT = "roman-expansion_scunet.jpg"
 ```
 
-## JPEG-Ausgabe
+## JPEG Output
 
-Für hochwertige JPEG-Ausgabe:
+For high-quality JPEG output:
 
 ``` python
 Image.fromarray(output_uint8).save(
@@ -169,10 +168,9 @@ Image.fromarray(output_uint8).save(
 )
 ```
 
-Für maximale verlustfreie Qualität kann stattdessen PNG verwendet
-werden.
+For maximum lossless quality, PNG can be used instead.
 
-## Empfohlene Einstellungen
+## Recommended Settings
 
 Normal:
 
@@ -181,33 +179,33 @@ TILE_SIZE = 512
 OVERLAP = 32
 ```
 
-Bei wenig verfügbarem RAM:
+With limited RAM:
 
 ``` python
 TILE_SIZE = 256
 OVERLAP = 32
 ```
 
-Eine größere Tile-Größe bedeutet weniger Inference-Durchläufe, aber
-höheren Speicherverbrauch. Eine kleinere Tile-Größe reduziert den
-Speicherverbrauch, erzeugt aber mehr Overhead.
+A larger tile size means fewer inference passes, but higher memory
+usage. A smaller tile size reduces memory usage, but adds more
+overhead.
 
-## Was SCUNet nicht macht
+## What SCUNet Does Not Do
 
-Diese Pipeline ist kein generatives Upscaling. Sie versucht insbesondere
-nicht, neue hochauflösende Inhalte zu erfinden.
+This pipeline is not generative upscaling. In particular, it does not
+try to invent new high-resolution content.
 
-Nicht vorgesehen sind:
+Not intended for:
 
--   2× oder 4× Upscaling
--   generative Detailerzeugung
--   Stable-Diffusion-Restoration
--   Face Reconstruction
+-   2x or 4x upscaling
+-   generative detail synthesis
+-   Stable Diffusion restoration
+-   face reconstruction
 
-Dafür wären Modelle wie SwinIR, Real-ESRGAN oder andere
-Super-Resolution-Modelle zuständig.
+Models such as SwinIR, Real-ESRGAN, or other super-resolution models
+would be responsible for that.
 
-SCUNet eignet sich besser für:
+SCUNet is better suited for:
 
 ``` text
 Original
@@ -218,70 +216,67 @@ Artifact Reduction
    ↓
 Edge Cleanup
    ↓
-Originalauflösung
+Original Resolution
 ```
 
-## Hinweise zu Karten und Grafiken
+## Notes on Maps and Graphics
 
-Bei Karten, Beschriftungen und feinen Linien ist ein konservatives
-Restoration-Modell häufig sinnvoller als ein GAN-basierter Upscaler.
+For maps, labels, and fine lines, a conservative restoration model is
+often more useful than a GAN-based upscaler.
 
-Aggressive Super-Resolution-Modelle können Buchstaben verändern, Linien
-neu interpretieren, kleine Symbole verfälschen oder künstliche Texturen
-erzeugen.
+Aggressive super-resolution models can alter letters, reinterpret
+lines, distort small symbols, or generate artificial textures.
 
-SCUNet `color_real_psnr` eignet sich deshalb besonders gut als erster
-Cleanup-Schritt.
+SCUNet `color_real_psnr` is therefore particularly well suited as a
+first cleanup step.
 
 ## Performance
 
-Die aktuelle Pipeline verwendet:
+The current pipeline uses:
 
 ``` python
 providers=["CPUExecutionProvider"]
 ```
 
-ONNX Runtime läuft damit über die CPU.
+ONNX Runtime therefore runs on the CPU.
 
-Tiled Processing verhindert dabei vor allem extremen RAM-Verbrauch und
-Swap.
+Tiled processing mainly prevents extreme RAM usage and swapping.
 
 ## Troubleshooting
 
 ### `The input tensor cannot be reshaped`
 
-Das bedeutet meistens, dass eine Bild- oder Tile-Dimension nicht zu den
-internen SCUNet-Blöcken passt.
+This usually means that an image or tile dimension does not fit SCUNet's
+internal blocks.
 
-Die aktuelle Pipeline verhindert dies durch:
+The current pipeline prevents this by using:
 
--   volle Rand-Tiles
--   Padding auf ein Vielfaches von 64
+-   full-size edge tiles
+-   padding to a multiple of 64
 
-### Sehr hoher Speicherverbrauch
+### Very high memory usage
 
-Tile-Größe reduzieren:
+Reduce the tile size:
 
 ``` python
 TILE_SIZE = 256
 ```
 
-### Sichtbare Grenzen zwischen Tiles
+### Visible boundaries between tiles
 
-Overlap auf `48` oder `64` erhöhen. `32 px` ist normalerweise ein guter
-Ausgangspunkt.
+Increase overlap to `48` or `64`. `32 px` is usually a good starting
+point.
 
-## Kurzfassung
+## Summary
 
 ``` text
 SCUNet color_real_psnr
 + ONNX Runtime
-+ 512 px Tiles
-+ 32 px Overlap
-+ Reflect Padding
-= lokale 1:1 Image-Restoration-Pipeline
++ 512 px tiles
++ 32 px overlap
++ reflect padding
+= local 1:1 image restoration pipeline
 ```
 
-Sie eignet sich besonders gut, wenn ein Bild **sauberer und ruhiger
-werden soll, ohne seine Auflösung oder seinen grundlegenden Inhalt zu
-verändern**.
+It is especially well suited when an image should become **cleaner and
+smoother without changing its resolution or basic content**.
