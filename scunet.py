@@ -1,9 +1,10 @@
 from PIL import Image
 import numpy as np
 import onnxruntime as ort
+import argparse
+from pathlib import Path
 
 MODEL = "scunet_color_real_psnr.onnx"
-INPUT = "roman-expansion.jpg"
 OUTPUT = "output.jpg"
 
 TILE_SIZE = 512
@@ -17,6 +18,25 @@ session = ort.InferenceSession(
 
 input_name = session.get_inputs()[0].name
 output_name = session.get_outputs()[0].name
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run SCUNet denoising on an input image."
+    )
+    parser.add_argument(
+        "input",
+        nargs="?",
+        default="roman-expansion.jpg",
+        help="Input image path (default: roman-expansion.jpg)"
+    )
+    parser.add_argument(
+        "output",
+        nargs="?",
+        default=None,
+        help="Output image path (default: <input>_scunet.jpg)"
+    )
+    return parser.parse_args()
 
 def run_scunet(tile):
     """
@@ -100,8 +120,17 @@ def make_positions(length, tile_size, step):
     return sorted(set(positions))
 
 
+args = parse_args()
+input_path = args.input
+
+if args.output is None:
+    input_stem = Path(input_path).stem
+    OUTPUT = f"{input_stem}_scunet.jpg"
+else:
+    OUTPUT = args.output
+
 # Bild laden
-img = Image.open(INPUT).convert("RGB")
+img = Image.open(input_path).convert("RGB")
 img_np = np.asarray(img).astype(np.float32) / 255.0
 
 height, width, _ = img_np.shape

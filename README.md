@@ -22,6 +22,9 @@ directory:
 scunet_color_real_psnr.onnx
 scunet_color_real_psnr.onnx.data
 ```
+ressource e.g.:
+https://huggingface.co/Heliosoph/scunet-onnx
+
 
 SCUNet stands for **Swin-Conv-UNet** and is a
 restoration/denoising model for real-world color images.
@@ -73,6 +76,12 @@ Install dependencies:
 pip install onnxruntime pillow numpy
 ```
 
+Example terminal call:
+
+``` bash
+python3 scunet.py
+```
+
 ## Folder Structure
 
 ``` text
@@ -80,8 +89,6 @@ ai-scunet/
 ├── scunet.py
 ├── scunet_color_real_psnr.onnx
 ├── scunet_color_real_psnr.onnx.data
-├── input.jpg
-└── output.jpg
 ```
 
 The `.onnx.data` file is only required if the downloaded ONNX model
@@ -141,22 +148,23 @@ removed again.
 
 ## Running the Script
 
-With a fixed input defined in the script:
+You can pass the input image as a positional argument:
 
 ``` bash
-python3 scunet.py
+python3 scunet.py roman-expansion.jpg
 ```
 
-Example:
+You can also pass an explicit output file:
 
-``` python
-INPUT = "roman-expansion.jpg"
-OUTPUT = "roman-expansion_scunet.jpg"
+``` bash
+python3 scunet.py roman-expansion.jpg roman-expansion_scunet.jpg
 ```
+
+If no output file is given, the script writes `<input>_scunet.jpg`.
 
 ## JPEG Output
 
-For high-quality JPEG output:
+For high-quality JPEG output change scunet.py here:
 
 ``` python
 Image.fromarray(output_uint8).save(
